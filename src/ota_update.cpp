@@ -73,7 +73,7 @@ void OTAHTTP_registerRoutes(AsyncWebServer& server){
       }
     },
     // onUpload
-    [](AsyncWebServerRequest* req, const String& filename, size_t index,
+    [ensureBackupDir, copyFile](AsyncWebServerRequest* req, const String& filename, size_t index,
        uint8_t *data, size_t len, bool final){
       static size_t total = 0; if (!index) total = 0;
       static File sBackup;
@@ -118,7 +118,7 @@ void OTAHTTP_registerRoutes(AsyncWebServer& server){
         ESP.restart();
       }
     },
-    [](AsyncWebServerRequest* req, const String& filename, size_t index,
+    [ensureBackupDir, copyFile](AsyncWebServerRequest* req, const String& filename, size_t index,
        uint8_t *data, size_t len, bool final){
       static size_t total = 0; if (!index) total = 0;
       static File sBackup;
@@ -161,7 +161,7 @@ void OTAHTTP_registerRoutes(AsyncWebServer& server){
   });
 
   // GET /api/ota/restore?what=fw|fs&which=last|orig
-  server.on("/api/ota/restore", HTTP_GET, [&](AsyncWebServerRequest* req){
+  server.on("/api/ota/restore", HTTP_GET, [ensureBackupDir](AsyncWebServerRequest* req){
     String what = req->getParam("what") ? req->getParam("what")->value() : "";
     String which= req->getParam("which")? req->getParam("which")->value(): "last";
     ensureBackupDir();

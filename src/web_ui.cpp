@@ -220,11 +220,34 @@ server.on("/api/testrpm", HTTP_POST, [](AsyncWebServerRequest* req) {
     if (!LittleFS.exists("/index.html")) {
       const char* fb =
         "<!doctype html><meta charset=utf-8>"
-        "<style>body{font-family:system-ui;padding:16px}pre{background:#eee;padding:8px;border-radius:8px}</style>"
+        "<style>body{font-family:system-ui;padding:16px;line-height:1.45}" \
+        "button,a{padding:8px 12px;margin:4px;border-radius:8px;border:1px solid #ccc;background:#f7f7f7;color:#000;text-decoration:none;display:inline-block}" \
+        "pre{background:#eee;padding:8px;border-radius:8px;overflow:auto}" \
+        ".row{margin:10px 0}</style>"
         "<h3>index.html chưa có trên LittleFS</h3>"
-        "<p>Vào VSCode → <b>PlatformIO: Upload File System Image</b></p>"
-        "<pre>pio run --target uploadfs</pre>"
-        "<p>Hoặc đặt file vào thư mục <code>data/index.html</code> rồi uploadfs.</p>";
+        "<div class=row>"
+          "<p>Vào VSCode → <b>PlatformIO: Upload File System Image</b></p>"
+          "<pre>pio run --target uploadfs</pre>"
+          "<p>Hoặc đặt file vào thư mục <code>data/index.html</code> rồi uploadfs.</p>"
+        "</div>"
+        "<hr>"
+        "<h4>OTA/Khôi phục nhanh (không cần PC)</h4>"
+        "<div class=row>"
+          "<a href=/ota>Trang OTA tối giản</a>"
+        "</div>"
+        "<div class=row>"
+          "<button onclick=restore('fw','last')>Khôi phục Firmware (Last)</button>"
+          "<button onclick=restore('fw','orig')>Khôi phục Firmware (Original)</button>"
+        "</div>"
+        "<div class=row>"
+          "<button onclick=restore('fs','last')>Khôi phục FS (Last)</button>"
+          "<button onclick=restore('fs','orig')>Khôi phục FS (Original)</button>"
+        "</div>"
+        "<div class=row><a href=/api/backup/list target=_blank>Xem kích thước các bản backup</a></div>"
+        "<script>function restore(what,which){\n"
+          " if(!confirm('Khôi phục '+what+' từ '+which+'? Thiết bị sẽ reboot.')) return;\n"
+          " fetch('/api/ota/restore?what='+what+'&which='+which).then(r=>r.text()).then(t=>alert(t)).catch(()=>{});\n"
+        "}</script>";
       req->send(200, "text/html", fb);
       return;
     }
