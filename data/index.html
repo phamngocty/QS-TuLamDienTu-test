@@ -725,8 +725,13 @@ q("#btnSaveBF").onclick = save;
         cfg.map = [];
         document.querySelectorAll("#map tr").forEach((tr) => {
           const t = tr.querySelectorAll("input");
-          cfg.map.push({ lo: +t[0].value, hi: +t[1].value, t: +t[2].value });
+          const lo = +t[0].value, hi = +t[1].value, cut = +t[2].value;
+          if (!isNaN(lo) && !isNaN(hi) && !isNaN(cut) && (lo||hi||cut)) {
+            cfg.map.push({ lo, hi, t: cut });
+          }
         });
+        // cap to 7 bands on save
+        if (cfg.map.length > 7) cfg.map = cfg.map.slice(0,7);
       }
 
       async function load() {
@@ -756,7 +761,7 @@ q("#btnSaveBF").onclick = save;
       q("#btnSave").onclick = save;
       q("#btnLoad").onclick = load;
       q("#btnSaveBF").onclick = save;
-      q("#btnReload").onclick = load;
+      q("#btnReload").onclick = async ()=>{ await load(); toast('Reloaded', true); };
 
       // Wi‑Fi/OTA handlers
       q('#btnWifiSave').onclick = async ()=>{
@@ -793,6 +798,8 @@ q("#btnSaveBF").onclick = save;
       q('#btnRestoreFsOrig').onclick = ()=> apiText('/api/ota/restore?what=fs&which=orig');
 
       q("#btnExport").onclick = () => {
+        // export current edits (not only last loaded)
+        collectCfg();
         const s = JSON.stringify(cfg, null, 2);
         const a = document.createElement("a");
         a.href = URL.createObjectURL(new Blob([s], { type: "application/json" }));
@@ -801,8 +808,9 @@ q("#btnSaveBF").onclick = save;
       };
       q("#f").onchange = async (e) => {
         const t = await e.target.files[0].text();
-        alert(await apiText("/api/set", { method: "POST", body: t }));
-        load();
+        const r = await apiPost('/api/set', t);
+        toast(r.text || (r.ok? 'OK' : 'Error'), r.ok);
+        await load();
       };
 
       /* ---------- Tools ---------- */

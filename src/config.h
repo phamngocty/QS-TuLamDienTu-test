@@ -50,12 +50,17 @@ struct QSConfig {
   // Calibration
   float rpm_scale = 1.0f;           // rpm_display = rpm_raw * rpm_scale
   // Auto map (up to 6 bands typical)
-  AutoBand map[4] = {
-    {2500, 4000, 85},
-    {4000, 7000, 65},
-    {7000,10000, 50},
-    {10000,20000,45}
+  AutoBand map[7] = {
+    {3000, 4000, 75},
+    {4000, 5000, 64},
+    {5000, 6500, 56},
+    {6500, 8000, 48},
+    {8000, 9500, 44},
+    {9500, 11500, 40},
+    {11500, 14000, 36}
   };
+
+  
   uint8_t map_count = 4;
   // Wi-Fi AP config
   char     ap_ssid[33]  = "";        // empty -> auto SSID

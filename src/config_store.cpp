@@ -29,7 +29,7 @@ void CFG::begin(){
   }
 
   // ==== Load Auto Map (giữ nguyên) ====
-  for (uint8_t i=0;i<g_cfg.map_count;i++){
+  for (uint8_t i=0;i<7;i++){
     char key[8];
     snprintf(key, sizeof(key), "m%dl", i); g_cfg.map[i].rpm_lo = prefs.getUShort(key, g_cfg.map[i].rpm_lo);
     snprintf(key, sizeof(key), "m%dh", i); g_cfg.map[i].rpm_hi = prefs.getUShort(key, g_cfg.map[i].rpm_hi);
@@ -86,7 +86,8 @@ void CFG::set(const QSConfig &c){
   prefs.putString("ap_ssid", String(c.ap_ssid));
   prefs.putString("ap_pass", String(c.ap_pass));
 
-  for (uint8_t i=0;i<c.map_count;i++){
+  // Save up to 7; map_count indicates how many are valid (>0)
+  for (uint8_t i=0;i<7;i++){
     char key[8];
     snprintf(key, sizeof(key), "m%dl", i); prefs.putUShort(key, c.map[i].rpm_lo);
     snprintf(key, sizeof(key), "m%dh", i); prefs.putUShort(key, c.map[i].rpm_hi);
@@ -162,7 +163,7 @@ bool CFG::exportJSON(String &out){
 
   // ==== Map ====
   JsonArray m = d.createNestedArray("map");
-  for (uint8_t i=0;i<g_cfg.map_count;i++){
+  for (uint8_t i=0;i<min<uint8_t>(g_cfg.map_count, (uint8_t)7); i++){
     JsonObject o = m.createNestedObject();
     o["lo"] = g_cfg.map[i].rpm_lo;
     o["hi"] = g_cfg.map[i].rpm_hi;
@@ -243,13 +244,17 @@ bool CFG::importJSON(const String &in){
     JsonArray m = d["map"].as<JsonArray>();
     uint8_t idx=0;
     for (JsonObject o : m){
-      if (idx>=4) break;
-      c.map[idx].rpm_lo = o["lo"];
-      c.map[idx].rpm_hi = o["hi"];
-      c.map[idx].cut_ms = o["t"];
+      if (idx>=7) break;
+      c.map[idx].rpm_lo = o["lo"] | 0;
+      c.map[idx].rpm_hi = o["hi"] | 0;
+      c.map[idx].cut_ms = o["t"]  | 0;
       idx++;
     }
-    c.map_count = (uint8_t)min<size_t>(m.size(), 4);
+    c.map_count = 0;
+    for (uint8_t i=0;i<min<size_t>(m.size(),7);i++){
+      if (c.map[i].rpm_lo || c.map[i].rpm_hi || c.map[i].cut_ms) c.map_count++;
+    }
+    if (c.map_count==0) c.map_count = 1; // at least one band
   }
 
   CFG::set(c);
