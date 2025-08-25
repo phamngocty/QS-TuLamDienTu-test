@@ -56,7 +56,16 @@ public:
   }
 
   // có thể đổi config khi đang chạy
-  void setConfig(const Config& cfg) { _cfg = cfg; }
+  void setConfig(const Config& cfg) {
+    const bool wasEnabled = _cfg.enabled;
+    _cfg = cfg;
+    // Nếu vừa chuyển từ bật -> tắt, dừng ngay mẫu đang chạy
+    if (wasEnabled && !_cfg.enabled) {
+      _active = false;
+      _burstsLeft = 0;
+      _nextPulseAt = _patternEnd = 0;
+    }
+  }
 
   // gọi một lần sau begin để đánh dấu thời điểm bắt đầu chạy
   void markStarted(uint32_t now_ms) { _startedAt = now_ms; }

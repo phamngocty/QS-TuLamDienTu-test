@@ -85,6 +85,25 @@ backfire.begin(bf, QS_GetRPM, QS_IsCutBusy, QS_RequestIgnCut, QS_IsIgnMode);
 
 }
 
+// Cho phép cập nhật cấu hình Backfire động từ CFG (gọi sau /api/set)
+void BACKFIRE_applyConfigFromCFG(){
+  const auto& c = CFG::get();
+  BackfireController::Config bf{};
+  bf.enabled               = (c.bf_enable != 0);
+  bf.ign_only              = (c.bf_ign_only != 0);
+  bf.mode                  = (uint8_t)(c.bf_mode & (BackfireController::BF_SHIFT | BackfireController::BF_OVERRUN));
+  bf.rpm_min               = c.bf_rpm_min;
+  bf.rpm_max               = c.bf_rpm_max;
+  bf.warmup_s              = c.bf_warmup_s;
+  bf.decel_thresh_rpm_s    = c.bf_decel_thresh;
+  bf.window_after_shift_ms = c.bf_window_ms;
+  bf.burst_count           = c.bf_burst_count;
+  bf.burst_on_ms           = c.bf_burst_on;
+  bf.burst_off_ms          = c.bf_burst_off;
+  bf.refractory_ms         = c.bf_refractory_ms;
+  backfire.setConfig(bf);
+}
+
 void loop(){
   // Ưu tiên xử lý khóa
   LOCK::tick();

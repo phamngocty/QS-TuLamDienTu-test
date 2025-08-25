@@ -101,6 +101,7 @@ static void handleAPI() {
     SLOGf("[API] /api/set → %s\n", ok ? "OK" : "BAD");
     req->send(ok ? 200 : 400, "text/plain", ok ? "OK" : "BAD");
     lastHit = millis();
+    if (ok) { extern void BACKFIRE_applyConfigFromCFG(); BACKFIRE_applyConfigFromCFG(); }
   });
 
   // --------- Logs ----------
@@ -168,6 +169,16 @@ server.on("/api/testrpm", HTTP_POST, [](AsyncWebServerRequest* req) {
     holdPortal = (on != 0);
     lastHit = millis();
     req->send(200, "text/plain", holdPortal ? "HOLD" : "RELEASE");
+  });
+
+  // --------- AP info (SSID, IP) ----------
+  server.on("/api/apinfo", HTTP_GET, [](AsyncWebServerRequest* req){
+    String js = "{";
+    js += "\"ssid\":\"" + WiFi.softAPSSID() + "\",";
+    js += "\"ip\":\"" + WiFi.softAPIP().toString() + "\"";
+    js += "}";
+    req->send(200, "application/json", js);
+    lastHit = millis();
   });
 
   server.on("/api/wifi_off", HTTP_POST, [](AsyncWebServerRequest* req) {
