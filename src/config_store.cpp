@@ -19,6 +19,10 @@ void CFG::begin(){
   g_cfg.cut_output        = (CutOutputSel)prefs.getUChar("cout", (uint8_t)g_cfg.cut_output);
   g_cfg.ap_timeout_s      = prefs.getUShort("ap_t", g_cfg.ap_timeout_s);
   g_cfg.rpm_scale         = prefs.getFloat("rpm_s", g_cfg.rpm_scale);
+  // Load map_count (number of valid bands)
+  g_cfg.map_count         = prefs.getUChar("mcount", g_cfg.map_count);
+  if (g_cfg.map_count == 0) g_cfg.map_count = 1; // at least one band
+  if (g_cfg.map_count > 7)  g_cfg.map_count = 7;
 
   // ==== Load Wi-Fi AP config ====
   {
@@ -93,6 +97,16 @@ void CFG::set(const QSConfig &c){
     snprintf(key, sizeof(key), "m%dh", i); prefs.putUShort(key, c.map[i].rpm_hi);
     snprintf(key, sizeof(key), "m%dt", i); prefs.putUShort(key, c.map[i].cut_ms);
   }
+  // Persist number of bands (map_count)
+  uint8_t cnt = c.map_count;
+  if (cnt == 0 || cnt > 7) {
+    cnt = 0;
+    for (uint8_t i=0;i<7;i++){
+      if (c.map[i].rpm_lo || c.map[i].rpm_hi || c.map[i].cut_ms) cnt++;
+    }
+    if (cnt == 0) cnt = 1;
+  }
+  prefs.putUChar("mcount", cnt);
 
   // ==== Save Backfire (bf_*) ====
   prefs.putUChar ("bfE",    c.bf_enable);

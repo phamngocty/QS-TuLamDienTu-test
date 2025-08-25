@@ -594,7 +594,8 @@
       tb.lock.onclick  = () => setTab("lock");
 
       async function apiGet(p) {
-        const r = await fetch(p);
+        const url = p + (p.includes('?') ? '&' : '?') + 't=' + Date.now();
+        const r = await fetch(url, { cache: 'no-store' });
         return r.ok ? r.json() : null;
       }
       async function apiText(p, o) {
