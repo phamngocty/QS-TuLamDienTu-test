@@ -98,10 +98,25 @@ static void handleAPI() {
   }, NULL, [](AsyncWebServerRequest* req, uint8_t* data, size_t len, size_t, size_t) {
     String body((char*)data, len);
     bool ok = CFG::importJSON(body);
-    SLOGf("[API] /api/set → %s\n", ok ? "OK" : "BAD");
-    req->send(ok ? 200 : 400, "text/plain", ok ? "OK" : "BAD");
-    lastHit = millis();
     if (ok) { extern void BACKFIRE_applyConfigFromCFG(); BACKFIRE_applyConfigFromCFG(); }
+    SLOGf("[API] /api/set → %s\n", ok ? "OK" : "BAD");
+    lastHit = millis();
+
+    // Echo back a compact summary so UI can verify what is applied
+    const auto& c = CFG::get();
+    String out = "{";
+    out += "\"ok\":"; out += ok?"true":"false"; out += ",";
+    out += "\"applied\":{";
+    out += "\"bf_enable\":" + String((int)c.bf_enable) + ",";
+    out += "\"bf_mode\":"   + String((int)c.bf_mode)   + ",";
+    out += "\"bf_ign_only\":"+ String((int)c.bf_ign_only) + ",";
+    out += "\"bf_rpm_min\":" + String((int)c.bf_rpm_min) + ",";
+    out += "\"bf_rpm_max\":" + String((int)c.bf_rpm_max) + ",";
+    out += "\"cut_output\":" + String((int)c.cut_output) + ",";
+    out += "\"mode\":"       + String((int)c.mode)       + ",";
+    out += "\"map_count\":"  + String((int)c.map_count);
+    out += "}}";
+    req->send(ok?200:400, "application/json", out);
   });
 
   // --------- Logs ----------

@@ -189,6 +189,9 @@
       .switch .slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
       .switch input:checked + .slider{background:#18c37e}
       .switch input:checked + .slider:before{transform:translateX(18px)}
+      /* Toast */
+      #toast{position:fixed;right:12px;bottom:12px;background:#0f1915;border:1px solid #18c37e;color:#fff;padding:8px 12px;border-radius:10px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s}
+      #toast.err{background:#1c1010;border-color:#ff4d4d}
     </style>
   </head>
 
@@ -598,6 +601,21 @@
         const r = await fetch(p, o);
         return r.text();
       }
+      async function apiPost(p, body){
+        const r = await fetch(p, {method:'POST', body});
+        const t = await r.text();
+        let json = null; try{ json = JSON.parse(t); }catch(e){}
+        return {ok:r.ok, text:t, json};
+      }
+      function toast(msg, ok=true){
+        let el = q('#toast');
+        if (!el){ el = document.createElement('div'); el.id='toast'; document.body.appendChild(el); }
+        el.className = ok? '' : 'err';
+        el.textContent = msg || (ok? 'OK' : 'Error');
+        el.style.opacity = '1';
+        clearTimeout(window.__toastT);
+        window.__toastT = setTimeout(()=> el.style.opacity='0', 1500);
+      }
 
       async function hold() {
         try {
@@ -723,8 +741,9 @@ q("#btnSaveBF").onclick = save;
       }
       async function save() {
         collectCfg();
-        const t = await apiText("/api/set", { method: "POST", body: JSON.stringify(cfg) });
-        alert(t || "OK");
+        const r = await apiPost('/api/set', JSON.stringify(cfg));
+        const sum = r.json && r.json.applied ? r.json.applied : null;
+        toast(sum? `Saved (bf_en=${sum.bf_enable}, mode=${sum.bf_mode})` : (r.text||'OK'), r.ok);
         await load();
       }
 
@@ -742,8 +761,8 @@ q("#btnSaveBF").onclick = save;
       // Wi‑Fi/OTA handlers
       q('#btnWifiSave').onclick = async ()=>{
         const body = { ap_ssid: q('#ap_ssid').value.trim(), ap_pass: q('#ap_pass').value };
-        const t = await apiText('/api/wifi_set', {method:'POST', body: JSON.stringify(body)});
-        alert(t||'OK');
+        const r = await apiPost('/api/wifi_set', JSON.stringify(body));
+        toast(r.text || (r.ok? 'OK' : 'Error'), r.ok);
       };
       function uploadWithProgress(url, file, prog){
         return new Promise((res, rej)=>{
@@ -1027,8 +1046,8 @@ function setGauge(rpm) {
           lock_timeout_s:    +q("#lock_timeout_s").value,
           lock_max_retries:  +q("#lock_max_retries").value
         };
-        q("#msgLockCfg").textContent = await apiText("/api/set", {method:"POST", body: JSON.stringify(body)});
-        setTimeout(()=> q("#msgLockCfg").textContent="", 1200);
+        const r = await apiPost('/api/set', JSON.stringify(body));
+        toast(r.text || (r.ok? 'OK' : 'Error'), r.ok);
       });
       q("#btnLockNow")?.addEventListener("click", async ()=>{
         await apiText("/api/lock_cmd", {method:"POST", body: JSON.stringify({cmd:"lock"})});
@@ -1045,8 +1064,8 @@ function setGauge(rpm) {
       q("#btnLockSet")?.addEventListener("click", async ()=>{
         const np = only01(q("#new_pass").value);
         if (!np){ q("#msgLockPass").textContent="New pass 0/1"; setTimeout(()=> q("#msgLockPass").textContent="", 1200); return; }
-        const t = await apiText("/api/set", {method:"POST", body: JSON.stringify({lock_code: np})});
-        q("#msgLockPass").textContent = t || "Set OK";
+        const r = await apiPost('/api/set', JSON.stringify({lock_code: np}));
+        toast(r.text || (r.ok? 'OK' : 'Error'), r.ok);
         setTimeout(()=> q("#msgLockPass").textContent="", 1200);
       });
       q("#btnLockChange")?.addEventListener("click", async ()=>{
